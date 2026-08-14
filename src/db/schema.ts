@@ -16,7 +16,7 @@ import {
 // mensagensEnviadas.tipo: "lembrete" | "atraso"
 // mensagensEnviadas.statusEnvio: "sucesso" | "erro"
 
-export const consulentes = pgTable("consulentes", {
+export const membros = pgTable("membros", {
   id: serial("id").primaryKey(),
   nome: varchar("nome", { length: 200 }).notNull(),
   whatsapp: varchar("whatsapp", { length: 30 }).notNull(),
@@ -31,9 +31,9 @@ export const consulentes = pgTable("consulentes", {
 
 export const pagamentos = pgTable("pagamentos", {
   id: serial("id").primaryKey(),
-  consulenteId: integer("consulente_id")
+  membroId: integer("membro_id")
     .notNull()
-    .references(() => consulentes.id, { onDelete: "cascade" }),
+    .references(() => membros.id, { onDelete: "cascade" }),
   mesReferencia: varchar("mes_referencia", { length: 7 }).notNull(), // formato "YYYY-MM"
   valor: numeric("valor", { precision: 10, scale: 2 }).notNull(),
   status: varchar("status", { length: 20 }).notNull().default("pendente"),
@@ -45,7 +45,7 @@ export const pagamentos = pgTable("pagamentos", {
 
 export const doacoes = pgTable("doacoes", {
   id: serial("id").primaryKey(),
-  consulenteId: integer("consulente_id").references(() => consulentes.id, {
+  membroId: integer("membro_id").references(() => membros.id, {
     onDelete: "set null",
   }),
   doadorNome: varchar("doador_nome", { length: 200 }),
@@ -69,9 +69,9 @@ export const despesas = pgTable("despesas", {
 
 export const mensagensEnviadas = pgTable("mensagens_enviadas", {
   id: serial("id").primaryKey(),
-  consulenteId: integer("consulente_id")
+  membroId: integer("membro_id")
     .notNull()
-    .references(() => consulentes.id, { onDelete: "cascade" }),
+    .references(() => membros.id, { onDelete: "cascade" }),
   tipo: varchar("tipo", { length: 20 }).notNull().default("lembrete"),
   mesReferencia: varchar("mes_referencia", { length: 7 }).notNull(),
   dataEnvio: timestamp("data_envio").defaultNow().notNull(),

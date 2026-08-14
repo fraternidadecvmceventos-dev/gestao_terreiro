@@ -71,10 +71,10 @@ export default function DespesasPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Despesas</h1>
-          <p className="text-sm text-zinc-500">{formatarMesReferencia(mes)}</p>
+          <h1>Despesas</h1>
+          <p className="hsub">{formatarMesReferencia(mes)}</p>
         </div>
         <input
           type="month"
@@ -170,7 +170,7 @@ export default function DespesasPage() {
                 ))}
               </tbody>
             </table>
-            <p className="mt-3 text-right text-sm font-semibold text-zinc-700">
+            <p className="mt-3 text-right text-sm font-semibold" style={{ color: "var(--txt2)" }}>
               Total do mês: {formatarMoeda(total)}
             </p>
           </>

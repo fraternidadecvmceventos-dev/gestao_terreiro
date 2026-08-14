@@ -34,41 +34,45 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="card w-full max-w-sm space-y-4"
-      >
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-zinc-900">Gestão do Terreiro</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Área administrativa — mensalidades, doações e prestação de contas
-          </p>
+    <div id="gate">
+      <div className="gate-in">
+        <div className="gmark">
+          <svg width="28" height="21" viewBox="0 0 34 26" fill="none" aria-hidden="true">
+            <path d="M2 22C6 11 14 3.5 24 1c-3 9-9.5 16.5-18 21z" fill="#7AC143" />
+            <path d="M9 25C13.5 13 21 5.5 32 2c-2.5 11-9.5 19.5-19.5 23z" fill="#1B7FA8" />
+          </svg>
+          <span>GESTÃO DO TERREIRO</span>
         </div>
 
-        <div>
-          <label className="label" htmlFor="senha">
+        <h1 className="gtitle">
+          Mensalidades e doações,
+          <br />
+          sempre em ordem.
+        </h1>
+        <p className="gsub">Área restrita — acesse com a senha de administrador.</p>
+
+        <form onSubmit={handleSubmit}>
+          <label className="glabel" htmlFor="senha">
             Senha de administrador
           </label>
           <input
             id="senha"
             type="password"
-            className="input"
+            className="ginput"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             autoFocus
             required
           />
-        </div>
 
-        {erro && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>
-        )}
+          {erro && <p className="gerro">{erro}</p>}
 
-        <button type="submit" className="btn-primary w-full" disabled={carregando}>
-          {carregando ? "Entrando..." : "Entrar"}
-        </button>
-      </form>
+          <button type="submit" className="gbtn" disabled={carregando}>
+            {carregando ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
+      </div>
+      <div className="gfoot">Uso interno — dados protegidos por senha.</div>
     </div>
   );
 }

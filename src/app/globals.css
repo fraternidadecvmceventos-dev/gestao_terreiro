@@ -1,8 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
+  --navy900: #08203a;
+  --navy800: #0e3157;
+  --navy700: #164a74;
+  --teal: #1b7fa8;
+  --teal2: #2e9bc4;
+  --green: #2e9b4e;
+  --lime: #7ac143;
+  --canvas: #f1f4f7;
+  --panel: #ffffff;
+  --line: #dfe5ea;
+  --line2: #c6d1da;
+  --txt: #0d1d2b;
+  --txt2: #4a5c6b;
+  --txt3: #8395a3;
+  --ok: #1b7f47;
+  --okbg: #e7f4ec;
+  --okbd: #bee0cb;
+  --att: #a76a05;
+  --attbg: #fcf2de;
+  --attbd: #eedcb2;
+  --risk: #ae2f27;
+  --riskbg: #faeae8;
+  --riskbd: #eec7c3;
+  --wait: #657785;
+  --waitbg: #ecf0f3;
+  --waitbd: #d8e0e6;
+  --grad: linear-gradient(90deg, #7ac143 0%, #2e9b4e 32%, #1b7fa8 68%, #12365c 100%);
+  --background: var(--canvas);
+  --foreground: var(--txt);
 }
 
 @theme inline {
@@ -10,48 +37,430 @@
   --color-foreground: var(--foreground);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+* {
+  box-sizing: border-box;
 }
 
+body {
+  background: var(--canvas);
+  color: var(--txt);
+  font-family: "Instrument Sans", system-ui, sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.arch {
+  font-family: "Archivo", sans-serif;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+h1 {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--txt);
+}
+
+/* ───────── layout helpers ───────── */
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.hsub {
+  font-size: 14px;
+  color: var(--txt3);
+  margin-top: 6px;
+}
+
+/* ───────── form controls ───────── */
 .input {
-  @apply w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600;
+  @apply w-full rounded-[3px] border bg-white px-3 py-2.5 text-sm outline-none transition-colors;
+  border-color: var(--line2);
+  color: var(--txt);
+}
+.input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(27, 127, 168, 0.12);
 }
 
 .label {
-  @apply mb-1 block text-sm font-medium text-zinc-700;
+  @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-wider;
+  color: var(--txt3);
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-md bg-amber-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-[3px] px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  font-family: "Archivo", sans-serif;
+  background: var(--navy800);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--navy700);
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-[3px] border bg-white px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  border-color: var(--line2);
+  color: var(--txt2);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--canvas);
+  border-color: var(--txt3);
 }
 
 .btn-danger {
-  @apply inline-flex items-center justify-center rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100;
+  @apply inline-flex items-center justify-center rounded-[2px] border px-3 py-1.5 text-xs font-semibold transition-colors;
+  border-color: var(--riskbd);
+  background: var(--riskbg);
+  color: var(--risk);
+}
+.btn-danger:hover {
+  background: #f6d9d5;
 }
 
 .card {
-  @apply rounded-lg border border-zinc-200 bg-white p-5 shadow-sm;
+  @apply rounded-[4px] border bg-white p-5;
+  border-color: var(--line);
 }
 
 .table-base {
   @apply w-full text-left text-sm;
 }
-
 .table-base th {
-  @apply border-b border-zinc-200 px-3 py-2 font-semibold text-zinc-600;
+  @apply border-b px-3 py-2.5 text-[11px] font-semibold tracking-wider uppercase;
+  border-color: var(--line);
+  color: var(--txt3);
 }
-
 .table-base td {
-  @apply border-b border-zinc-100 px-3 py-2;
+  @apply border-b px-3 py-3;
+  border-color: var(--line);
+  color: var(--txt);
 }
 
 .badge {
-  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center gap-1.5 rounded-[2px] border px-2.5 py-1 text-xs font-semibold;
+}
+.badge-ok {
+  background: var(--okbg);
+  color: var(--ok);
+  border-color: var(--okbd);
+}
+.badge-att {
+  background: var(--attbg);
+  color: var(--att);
+  border-color: var(--attbd);
+}
+.badge-risk {
+  background: var(--riskbg);
+  color: var(--risk);
+  border-color: var(--riskbd);
+}
+.badge-wait {
+  background: var(--waitbg);
+  color: var(--wait);
+  border-color: var(--waitbd);
+}
+
+/* ───────── top navigation band ───────── */
+.band {
+  background: var(--navy900);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.band-top {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.bmark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Archivo", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  color: #fff;
+  white-space: nowrap;
+}
+.bnav {
+  display: flex;
+  gap: 2px;
+  margin-right: auto;
+  flex-wrap: wrap;
+}
+.bnav a {
+  color: #8faac0;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.bnav a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+}
+.bnav a.on {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.11);
+}
+.bright {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.blogout {
+  background: none;
+  border: 0;
+  color: #8faac0;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 7px 4px;
+  transition: color 0.15s;
+}
+.blogout:hover {
+  color: #fff;
+}
+.horizon {
+  height: 2px;
+  background: var(--grad);
+}
+
+.wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 30px 24px 80px;
+  width: 100%;
+}
+
+/* ───────── KPI rail ───────── */
+.rail {
+  display: flex;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.rl {
+  flex: 1;
+  min-width: 160px;
+  padding: 17px 22px;
+  border-right: 1px solid var(--line);
+}
+.rl:last-child {
+  border-right: 0;
+}
+.rl-l {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--txt3);
+  margin-bottom: 8px;
+}
+.rl-v {
+  font-family: "Archivo", sans-serif;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--txt);
+}
+.rl-d {
+  font-size: 12.5px;
+  color: var(--txt3);
+  margin-top: 6px;
+}
+.rl-d.att {
+  color: var(--att);
+}
+.rl-d.risk {
+  color: var(--risk);
+}
+
+/* ───────── segmented filters ───────── */
+.seg {
+  display: inline-flex;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-wrap: wrap;
+}
+.seg button {
+  background: none;
+  border: 0;
+  border-right: 1px solid var(--line);
+  padding: 8px 15px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--txt2);
+  cursor: pointer;
+  transition: all 0.14s;
+  white-space: nowrap;
+}
+.seg button:last-child {
+  border-right: 0;
+}
+.seg button:hover {
+  background: var(--canvas);
+}
+.seg button[aria-pressed="true"] {
+  background: var(--navy900);
+  color: #fff;
+}
+.seg .c {
+  opacity: 0.55;
+  font-size: 11.5px;
+  margin-left: 5px;
+}
+
+/* ───────── gate (login) ───────── */
+#gate {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--navy900);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+#gate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 25%, rgba(27, 127, 168, 0.2), transparent 60%),
+    radial-gradient(circle at 85% 85%, rgba(122, 193, 67, 0.14), transparent 55%);
+  pointer-events: none;
+}
+.gate-in {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+}
+.gmark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 44px;
+}
+.gmark span {
+  font-family: "Archivo", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #fff;
+}
+.gtitle {
+  font-family: "Archivo", sans-serif;
+  font-size: 27px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.26;
+  letter-spacing: -0.015em;
+  margin-bottom: 10px;
+}
+.gsub {
+  font-size: 14.5px;
+  color: #9db4c6;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+.glabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6e90ac;
+  margin-bottom: 10px;
+}
+.ginput {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1.5px solid #2b5478;
+  padding: 11px 2px;
+  font-size: 19px;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.ginput::placeholder {
+  color: #476f91;
+}
+.ginput:focus {
+  border-color: var(--lime);
+}
+.gbtn {
+  margin-top: 26px;
+  width: 100%;
+  padding: 14px;
+  background: #fff;
+  color: var(--navy900);
+  border: 0;
+  border-radius: 3px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: "Archivo", sans-serif;
+  transition: box-shadow 0.2s, transform 0.12s;
+}
+.gbtn:hover:not(:disabled) {
+  box-shadow: 0 6px 22px rgba(122, 193, 67, 0.22);
+}
+.gbtn:active {
+  transform: translateY(1px);
+}
+.gbtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.gerro {
+  margin-top: 14px;
+  font-size: 13.5px;
+  color: #f3a9a2;
+}
+.gfoot {
+  position: absolute;
+  bottom: 26px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: #4e718f;
+  z-index: 2;
+}
+
+@media (max-width: 760px) {
+  .band-top {
+    gap: 14px;
+    padding: 0 16px;
+  }
+  .wrap {
+    padding: 22px 16px 64px;
+  }
 }

@@ -6,7 +6,7 @@ Painel para cadastrar consulentes, cobrar mensalidade por WhatsApp, registrar do
 
 - **Next.js 16** (App Router) + Tailwind — frontend e API em um único projeto, hospedado na **Vercel**.
 - **Postgres** (recomendado: Supabase ou Neon, ambos com plano gratuito) + **Drizzle ORM** — não usa Prisma de propósito: os binários do Prisma são baixados de uma CDN própria que fica bloqueada em alguns ambientes de rede restrita; o Drizzle é 100% JavaScript e evita esse problema.
-- **Z-API** para envio das mensagens de WhatsApp.
+- **API oficial do WhatsApp (Meta Cloud API)** para envio das mensagens — usa modelos de mensagem (templates) pré-aprovados, sem custo mensal fixo e sem risco de bloqueio do número (por ser a via oficial).
 - **Vercel Cron Jobs** para disparo automático diário da cobrança (`vercel.json`).
 - **ExcelJS** para gerar a planilha de prestação de contas sob demanda, a partir dos dados reais do banco.
 
@@ -62,18 +62,24 @@ Guarde a string — ela vai na variável `DATABASE_URL`.
    - `DATABASE_URL` — a connection string do passo 2.
    - `ADMIN_PASSWORD` — a senha que você vai usar para entrar no painel.
    - `SESSION_SECRET` — gere uma com `openssl rand -base64 32`.
-   - `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_CLIENT_TOKEN` — veja o passo 4.
+   - `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_TEMPLATE_LEMBRETE`, `WHATSAPP_TEMPLATE_ATRASO` — veja o passo 4.
    - `CRON_SECRET` — qualquer string aleatória (protege a rota de cron).
    - `PIX_KEY` — a chave PIX que aparece nas mensagens de cobrança.
    - `TERREIRO_NAME` — nome exibido no painel e nas mensagens.
 3. Clique em "Deploy".
 
-### 4. Configure a Z-API
+### 4. Configure a API oficial do WhatsApp (Meta)
 
-1. Crie uma conta em [z-api.io](https://www.z-api.io) e uma instância conectada ao WhatsApp do terreiro (é necessário escanear o QR Code com o celular, como no WhatsApp Web).
-2. No painel da instância, copie o **Instance ID** e o **Token** → variáveis `ZAPI_INSTANCE_ID` e `ZAPI_TOKEN`.
-3. Copie o **Client-Token** da conta (em Segurança/Security da conta Z-API) → variável `ZAPI_CLIENT_TOKEN`.
-4. **Confirme os valores atuais de plano/preço direto no site da Z-API antes de contratar** — não há garantia de que os preços não mudaram desde a criação deste projeto.
+Diferente de provedores terceirizados, aqui a mensagem que o terreiro *inicia* (a cobrança) precisa usar um **modelo de mensagem (template)** pré-aprovado pela Meta — não dá para mandar texto livre nesse caso. Passo a passo:
+
+1. Crie uma conta em [business.facebook.com](https://business.facebook.com) (Meta Business Manager) e depois em [developers.facebook.com](https://developers.facebook.com), crie um novo app do tipo "Business" com o produto **WhatsApp** adicionado.
+2. No painel do WhatsApp do app, a Meta já disponibiliza um **número de teste** gratuito — copie o **Phone Number ID** dele → variável `WHATSAPP_PHONE_NUMBER_ID`, e gere um **token de acesso temporário** (ou, melhor, um token permanente de usuário do sistema) → variável `WHATSAPP_ACCESS_TOKEN`. Com o número de teste você já consegue enviar mensagens para até 5 números verificados, ótimo para testar antes de ligar o número real do terreiro.
+3. Vá em **WhatsApp Manager** → **Modelos de mensagem (Message Templates)** e crie dois modelos, categoria **"Utility"**, idioma **Portuguese (BR)**, com exatamente este texto no corpo (a ordem das variáveis `{{1}}`, `{{2}}` etc. importa):
+   - `mensalidade_lembrete`: `Olá, {{1}}! Passando para lembrar da sua mensalidade de {{2}} no valor de R$ {{3}}, com vencimento no dia {{4}}. Chave PIX: {{5}}. Qualquer dúvida, estamos à disposição. Axé!`
+   - `mensalidade_atraso`: `Olá, {{1}}! Notamos que a mensalidade de {{2}} (R$ {{3}}) ainda consta em aberto. Chave PIX: {{4}}. Se já pagou, pode desconsiderar. Axé!`
+4. Envie os dois modelos para aprovação (geralmente leva de alguns minutos a 1 dia útil). Enquanto não forem aprovados, o envio retorna erro — o app mostra a mensagem de erro certinha na tela para você acompanhar.
+5. Quando quiser usar o número real do terreiro (em vez do número de teste), adicione-o em WhatsApp Manager → Números de telefone, o que pode exigir verificação da conta comercial (Meta Business Verification).
+6. **Sobre custo**: a Meta cobra por "conversas" iniciadas pela empresa acima de uma cota gratuita mensal — para o volume de um terreiro pequeno (cobrança 1x por mês por consulente), é bem provável que fique dentro da cota gratuita, mas os valores exatos da cota mudam com o tempo — confira a página de preços atual em **business.whatsapp.com/products/platform-pricing** antes de escalar o uso.
 
 ### 5. Rode as migrations no banco de produção
 
@@ -121,7 +127,7 @@ src/
     seed.ts                  dados de exemplo para dev
   lib/
     auth.ts                  sessão do admin (cookie assinado)
-    zapi.ts                  integração com a Z-API
+    whatsapp-meta.ts         integração com a API oficial do WhatsApp (Meta)
     format.ts                formatação de moeda/datas
   proxy.ts                   protege as rotas (exige login)
 ```
@@ -136,7 +142,7 @@ src/
 
 - **Sem conciliação automática de PIX**: marcar "pago" ainda é manual. Uma evolução natural é integrar com a API de PIX de algum banco/gateway para automatizar isso.
 - **Sem múltiplos usuários/permissões**: só existe a senha única de administrador.
-- **Sem confirmação do consulente pelo WhatsApp**: o consulente não consegue responder e ter isso refletido automaticamente no sistema (exigiria configurar um webhook de recebimento na Z-API).
+- **Sem confirmação do consulente pelo WhatsApp**: o consulente não consegue responder e ter isso refletido automaticamente no sistema (exigiria configurar um webhook de recebimento na API do WhatsApp).
 - **Cron roda 1x por dia**: suficiente para o volume atual, mas se o terreiro crescer muito, pode valer revisar a lógica de horários/fusos.
 
 ## Comandos úteis

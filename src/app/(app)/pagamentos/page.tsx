@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { formatarMoeda, formatarMesReferencia, mesReferenciaAtual, dataHojeISO } from "@/lib/format";
 
 type LinhaPagamento = {
@@ -11,17 +11,19 @@ type LinhaPagamento = {
   dataPagamento: string | null;
   formaPagamento: string | null;
   observacao: string | null;
-  consulenteId: number;
-  consulenteNome: string;
-  consulenteWhatsapp: string;
+  membroId: number;
+  membroNome: string;
+  membroWhatsapp: string;
   diaVencimento: number;
 };
 
+type Filtro = "todas" | "pendente" | "atrasado" | "pago";
+
 const STATUS_LABEL: Record<string, string> = { pendente: "Pendente", pago: "Pago", atrasado: "Atrasado" };
-const STATUS_CLASSE: Record<string, string> = {
-  pendente: "bg-amber-100 text-amber-800",
-  pago: "bg-emerald-100 text-emerald-800",
-  atrasado: "bg-red-100 text-red-800",
+const STATUS_BADGE: Record<string, string> = {
+  pendente: "badge-att",
+  pago: "badge-ok",
+  atrasado: "badge-risk",
 };
 
 export default function PagamentosPage() {
@@ -31,6 +33,7 @@ export default function PagamentosPage() {
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [enviandoId, setEnviandoId] = useState<number | null>(null);
   const [enviandoLote, setEnviandoLote] = useState(false);
+  const [filtro, setFiltro] = useState<Filtro>("todas");
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -44,6 +47,21 @@ export default function PagamentosPage() {
     carregar();
   }, [carregar]);
 
+  const contagens = useMemo(
+    () => ({
+      todas: linhas.length,
+      pendente: linhas.filter((l) => l.status === "pendente").length,
+      atrasado: linhas.filter((l) => l.status === "atrasado").length,
+      pago: linhas.filter((l) => l.status === "pago").length,
+    }),
+    [linhas]
+  );
+
+  const linhasFiltradas = useMemo(
+    () => (filtro === "todas" ? linhas : linhas.filter((l) => l.status === filtro)),
+    [linhas, filtro]
+  );
+
   async function gerarCobrancas() {
     setMensagem(null);
     const resposta = await fetch("/api/pagamentos/gerar", {
@@ -53,7 +71,7 @@ export default function PagamentosPage() {
     });
     const dados = await resposta.json();
     setMensagem(
-      `Cobranças geradas: ${dados.criados} nova(s) de ${dados.totalAtivos} consulente(s) ativo(s).`
+      `Cobranças geradas: ${dados.criados} nova(s) de ${dados.totalAtivos} membro(s) ativo(s).`
     );
     carregar();
   }
@@ -89,7 +107,7 @@ export default function PagamentosPage() {
       body: JSON.stringify({ pagamentoId: linha.id }),
     });
     const dados = await resposta.json();
-    setMensagem(resposta.ok ? `Mensagem enviada para ${linha.consulenteNome}.` : `Erro: ${dados.erro}`);
+    setMensagem(resposta.ok ? `Mensagem enviada para ${linha.membroNome}.` : `Erro: ${dados.erro}`);
     setEnviandoId(null);
   }
 
@@ -111,10 +129,10 @@ export default function PagamentosPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Mensalidades</h1>
-          <p className="text-sm text-zinc-500">{formatarMesReferencia(mes)}</p>
+          <h1>Mensalidades</h1>
+          <p className="hsub">{formatarMesReferencia(mes)}</p>
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -136,19 +154,35 @@ export default function PagamentosPage() {
         <p className="rounded-md bg-zinc-100 px-3 py-2 text-sm text-zinc-700">{mensagem}</p>
       )}
 
+      <div className="seg">
+        <button aria-pressed={filtro === "todas"} onClick={() => setFiltro("todas")}>
+          Todas<span className="c">{contagens.todas}</span>
+        </button>
+        <button aria-pressed={filtro === "pendente"} onClick={() => setFiltro("pendente")}>
+          Pendentes<span className="c">{contagens.pendente}</span>
+        </button>
+        <button aria-pressed={filtro === "atrasado"} onClick={() => setFiltro("atrasado")}>
+          Atrasadas<span className="c">{contagens.atrasado}</span>
+        </button>
+        <button aria-pressed={filtro === "pago"} onClick={() => setFiltro("pago")}>
+          Pagas<span className="c">{contagens.pago}</span>
+        </button>
+      </div>
+
       <div className="card overflow-x-auto">
         {carregando ? (
           <p className="text-sm text-zinc-500">Carregando...</p>
-        ) : linhas.length === 0 ? (
+        ) : linhasFiltradas.length === 0 ? (
           <p className="text-sm text-zinc-500">
-            Nenhuma cobrança gerada para este mês ainda. Clique em &quot;Gerar cobranças do
-            mês&quot;.
+            {linhas.length === 0
+              ? 'Nenhuma cobrança gerada para este mês ainda. Clique em "Gerar cobranças do mês".'
+              : "Nenhuma mensalidade neste filtro."}
           </p>
         ) : (
           <table className="table-base">
             <thead>
               <tr>
-                <th>Consulente</th>
+                <th>Membro</th>
                 <th>Valor</th>
                 <th>Vencimento</th>
                 <th>Status</th>
@@ -157,13 +191,15 @@ export default function PagamentosPage() {
               </tr>
             </thead>
             <tbody>
-              {linhas.map((linha) => (
+              {linhasFiltradas.map((linha) => (
                 <tr key={linha.id}>
-                  <td className="font-medium text-zinc-900">{linha.consulenteNome}</td>
+                  <td className="font-medium" style={{ color: "var(--txt)" }}>
+                    {linha.membroNome}
+                  </td>
                   <td>{formatarMoeda(linha.valor)}</td>
                   <td>Dia {linha.diaVencimento}</td>
                   <td>
-                    <span className={`badge ${STATUS_CLASSE[linha.status]}`}>
+                    <span className={`badge ${STATUS_BADGE[linha.status]}`}>
                       {STATUS_LABEL[linha.status]}
                     </span>
                   </td>

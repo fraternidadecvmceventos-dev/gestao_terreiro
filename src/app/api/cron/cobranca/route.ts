@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { consulentes, pagamentos, mensagensEnviadas } from "@/db/schema";
+import { membros, pagamentos, mensagensEnviadas } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import {
   mesReferenciaAtual,
@@ -9,12 +9,12 @@ import {
   formatarMoeda,
   formatarMesReferencia,
 } from "@/lib/format";
-import { enviarMensagemWhatsapp, montarMensagemCobranca, montarMensagemAtraso } from "@/lib/zapi";
+import { enviarLembreteMensalidade, enviarAvisoAtraso } from "@/lib/whatsapp-meta";
 
 /**
  * Rotina diária (chamada pelo Vercel Cron — ver vercel.json) que:
  *  1. Garante que existe uma linha de pagamento "pendente" para o mês atual
- *     de cada consulente ativo.
+ *     de cada membro ativo.
  *  2. Envia o lembrete de cobrança no dia do vencimento de cada um.
  *  3. Marca como "atrasado" quem passou do vencimento sem pagar, e envia um
  *     único aviso de atraso por mês.
@@ -35,31 +35,30 @@ export async function GET(request: NextRequest) {
   const mes = mesReferenciaAtual();
   const diaHoje = diaDoMesAtual();
   const hojeISO = dataHojeISO();
-  const nomeTerreiro = process.env.TERREIRO_NAME || "Terreiro";
   const chavePix = process.env.PIX_KEY || "(chave PIX não configurada)";
 
-  const ativos = await db.select().from(consulentes).where(eq(consulentes.ativo, true));
+  const ativos = await db.select().from(membros).where(eq(membros.ativo, true));
 
   let pagamentosCriados = 0;
   let lembretesEnviados = 0;
   let atrasosMarcados = 0;
   let avisosAtrasoEnviados = 0;
 
-  for (const consulente of ativos) {
+  for (const membro of ativos) {
     let [pagamento] = await db
       .select()
       .from(pagamentos)
       .where(
-        and(eq(pagamentos.consulenteId, consulente.id), eq(pagamentos.mesReferencia, mes))
+        and(eq(pagamentos.membroId, membro.id), eq(pagamentos.mesReferencia, mes))
       );
 
     if (!pagamento) {
       [pagamento] = await db
         .insert(pagamentos)
         .values({
-          consulenteId: consulente.id,
+          membroId: membro.id,
           mesReferencia: mes,
-          valor: consulente.valorMensalidade,
+          valor: membro.valorMensalidade,
           status: "pendente",
         })
         .returning();
@@ -68,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     if (pagamento.status === "pago") continue;
 
-    const vencimentoISO = `${mes}-${String(consulente.diaVencimento).padStart(2, "0")}`;
+    const vencimentoISO = `${mes}-${String(membro.diaVencimento).padStart(2, "0")}`;
     const estaAtrasado = hojeISO > vencimentoISO;
 
     if (estaAtrasado && pagamento.status !== "atrasado") {
@@ -84,29 +83,28 @@ export async function GET(request: NextRequest) {
     const mesFormatado = formatarMesReferencia(mes);
 
     // Lembrete no dia do vencimento (uma vez por mês).
-    if (diaHoje === consulente.diaVencimento && pagamento.status === "pendente") {
+    if (diaHoje === membro.diaVencimento && pagamento.status === "pendente") {
       const jaEnviado = await db
         .select()
         .from(mensagensEnviadas)
         .where(
           and(
-            eq(mensagensEnviadas.consulenteId, consulente.id),
+            eq(mensagensEnviadas.membroId, membro.id),
             eq(mensagensEnviadas.mesReferencia, mes),
             eq(mensagensEnviadas.tipo, "lembrete")
           )
         );
       if (jaEnviado.length === 0) {
-        const mensagem = montarMensagemCobranca({
-          nomeTerreiro,
-          nomeConsulente: consulente.nome,
+        const resultado = await enviarLembreteMensalidade({
+          numero: membro.whatsapp,
+          nomeMembro: membro.nome,
           mesReferenciaFormatado: mesFormatado,
           valor: valorFormatado,
-          diaVencimento: consulente.diaVencimento,
+          diaVencimento: String(membro.diaVencimento),
           chavePix,
         });
-        const resultado = await enviarMensagemWhatsapp(consulente.whatsapp, mensagem);
         await db.insert(mensagensEnviadas).values({
-          consulenteId: consulente.id,
+          membroId: membro.id,
           tipo: "lembrete",
           mesReferencia: mes,
           statusEnvio: resultado.sucesso ? "sucesso" : "erro",
@@ -123,22 +121,21 @@ export async function GET(request: NextRequest) {
         .from(mensagensEnviadas)
         .where(
           and(
-            eq(mensagensEnviadas.consulenteId, consulente.id),
+            eq(mensagensEnviadas.membroId, membro.id),
             eq(mensagensEnviadas.mesReferencia, mes),
             eq(mensagensEnviadas.tipo, "atraso")
           )
         );
       if (jaAvisado.length === 0) {
-        const mensagem = montarMensagemAtraso({
-          nomeTerreiro,
-          nomeConsulente: consulente.nome,
+        const resultado = await enviarAvisoAtraso({
+          numero: membro.whatsapp,
+          nomeMembro: membro.nome,
           mesReferenciaFormatado: mesFormatado,
           valor: valorFormatado,
           chavePix,
         });
-        const resultado = await enviarMensagemWhatsapp(consulente.whatsapp, mensagem);
         await db.insert(mensagensEnviadas).values({
-          consulenteId: consulente.id,
+          membroId: membro.id,
           tipo: "atraso",
           mesReferencia: mes,
           statusEnvio: resultado.sucesso ? "sucesso" : "erro",
@@ -151,7 +148,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     mes,
-    consulentesAtivos: ativos.length,
+    membrosAtivos: ativos.length,
     pagamentosCriados,
     lembretesEnviados,
     atrasosMarcados,

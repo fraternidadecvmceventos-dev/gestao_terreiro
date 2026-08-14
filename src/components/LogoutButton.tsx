@@ -15,11 +15,7 @@ export function LogoutButton() {
   }
 
   return (
-    <button
-      onClick={handleLogout}
-      disabled={carregando}
-      className="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-700"
-    >
+    <button onClick={handleLogout} disabled={carregando} className="blogout">
       {carregando ? "Saindo..." : "Sair"}
     </button>
   );

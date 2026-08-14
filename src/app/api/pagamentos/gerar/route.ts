@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { pagamentos, consulentes } from "@/db/schema";
+import { pagamentos, membros } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { mesReferenciaAtual } from "@/lib/format";
 import { z } from "zod";
@@ -14,8 +14,8 @@ const bodySchema = z.object({
 
 /**
  * Gera as cobranças (linhas de pagamento pendente) do mês para todos os
- * consulentes ativos que ainda não têm uma linha nesse mês. Idempotente:
- * pode ser chamado várias vezes sem duplicar.
+ * membros ativos que ainda não têm uma linha nesse mês. Idempotente: pode
+ * ser chamado várias vezes sem duplicar.
  */
 export async function POST(request: NextRequest) {
   const json = await request.json().catch(() => ({}));
@@ -28,25 +28,22 @@ export async function POST(request: NextRequest) {
   }
   const mes = parsed.data.mes || mesReferenciaAtual();
 
-  const ativos = await db
-    .select()
-    .from(consulentes)
-    .where(eq(consulentes.ativo, true));
+  const ativos = await db.select().from(membros).where(eq(membros.ativo, true));
 
   const existentes = await db
-    .select({ consulenteId: pagamentos.consulenteId })
+    .select({ membroId: pagamentos.membroId })
     .from(pagamentos)
     .where(eq(pagamentos.mesReferencia, mes));
-  const idsComPagamento = new Set(existentes.map((p) => p.consulenteId));
+  const idsComPagamento = new Set(existentes.map((p) => p.membroId));
 
-  const faltantes = ativos.filter((c) => !idsComPagamento.has(c.id));
+  const faltantes = ativos.filter((m) => !idsComPagamento.has(m.id));
 
   let criados = 0;
-  for (const consulente of faltantes) {
+  for (const membro of faltantes) {
     await db.insert(pagamentos).values({
-      consulenteId: consulente.id,
+      membroId: membro.id,
       mesReferencia: mes,
-      valor: consulente.valorMensalidade,
+      valor: membro.valorMensalidade,
       status: "pendente",
     });
     criados++;

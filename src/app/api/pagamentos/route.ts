@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { pagamentos, consulentes } from "@/db/schema";
+import { pagamentos, membros } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { mesReferenciaAtual } from "@/lib/format";
 
@@ -17,15 +17,15 @@ export async function GET(request: NextRequest) {
       dataPagamento: pagamentos.dataPagamento,
       formaPagamento: pagamentos.formaPagamento,
       observacao: pagamentos.observacao,
-      consulenteId: consulentes.id,
-      consulenteNome: consulentes.nome,
-      consulenteWhatsapp: consulentes.whatsapp,
-      diaVencimento: consulentes.diaVencimento,
+      membroId: membros.id,
+      membroNome: membros.nome,
+      membroWhatsapp: membros.whatsapp,
+      diaVencimento: membros.diaVencimento,
     })
     .from(pagamentos)
-    .innerJoin(consulentes, eq(pagamentos.consulenteId, consulentes.id))
+    .innerJoin(membros, eq(pagamentos.membroId, membros.id))
     .where(eq(pagamentos.mesReferencia, mes))
-    .orderBy(asc(consulentes.nome));
+    .orderBy(asc(membros.nome));
 
   return NextResponse.json({ mes, pagamentos: linhas });
 }

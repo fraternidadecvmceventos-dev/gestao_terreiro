@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { db } from "@/db";
-import { pagamentos, consulentes, doacoes, despesas } from "@/db/schema";
+import { pagamentos, membros, doacoes, despesas } from "@/db/schema";
 import { eq, and, gte, lt } from "drizzle-orm";
 import { mesReferenciaAtual, formatarMesReferencia } from "@/lib/format";
 
@@ -43,19 +43,19 @@ export async function GET(request: NextRequest) {
 
   const linhasMensalidades = await db
     .select({
-      nome: consulentes.nome,
-      whatsapp: consulentes.whatsapp,
+      nome: membros.nome,
+      whatsapp: membros.whatsapp,
       valor: pagamentos.valor,
-      diaVencimento: consulentes.diaVencimento,
+      diaVencimento: membros.diaVencimento,
       status: pagamentos.status,
       dataPagamento: pagamentos.dataPagamento,
       formaPagamento: pagamentos.formaPagamento,
       observacao: pagamentos.observacao,
     })
     .from(pagamentos)
-    .innerJoin(consulentes, eq(pagamentos.consulenteId, consulentes.id))
+    .innerJoin(membros, eq(pagamentos.membroId, membros.id))
     .where(eq(pagamentos.mesReferencia, mes))
-    .orderBy(consulentes.nome);
+    .orderBy(membros.nome);
 
   const linhasDoacoes = await db
     .select()
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
   wsMensalidades.getCell(1, 1).font = { name: FONT_NAME, bold: true, size: 14, color: { argb: "FF2F5496" } };
 
   const headers1 = [
-    "Nome do Consulente",
+    "Nome do Membro",
     "WhatsApp",
     "Valor Mensalidade (R$)",
     "Dia Vencimento",
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
   wsDoacoes.getCell(1, 1).value = `DOAÇÕES RECEBIDAS — ${mesFormatado}`;
   wsDoacoes.getCell(1, 1).font = { name: FONT_NAME, bold: true, size: 14, color: { argb: "FF2F5496" } };
 
-  const headers2 = ["Data", "Doador / Consulente", "Valor (R$)", "Categoria", "Forma de Pagamento", "Observação"];
+  const headers2 = ["Data", "Doador / Membro", "Valor (R$)", "Categoria", "Forma de Pagamento", "Observação"];
   headers2.forEach((h, i) => (wsDoacoes.getCell(3, i + 1).value = h));
   estilizarCabecalho(wsDoacoes, 3, headers2.length);
 

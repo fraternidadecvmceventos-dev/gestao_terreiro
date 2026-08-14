@@ -7,10 +7,10 @@ async function main() {
   // estático no topo do arquivo seria "hoisted" pelo ESM e rodaria antes
   // do config() acima.
   const { db } = await import("./index");
-  const { consulentes } = await import("./schema");
+  const { membros } = await import("./schema");
 
   const inseridos = await db
-    .insert(consulentes)
+    .insert(membros)
     .values([
       { nome: "Maria Exemplo", whatsapp: "5511912345678", valorMensalidade: "50.00", diaVencimento: 5 },
       { nome: "João Exemplo", whatsapp: "5511998765432", valorMensalidade: "50.00", diaVencimento: 10 },
@@ -18,7 +18,7 @@ async function main() {
     ])
     .returning();
 
-  console.log(`Seed concluído: ${inseridos.length} consulente(s) de exemplo inserido(s).`);
+  console.log(`Seed concluído: ${inseridos.length} membro(s) de exemplo inserido(s).`);
   process.exit(0);
 }
 

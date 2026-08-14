@@ -9,12 +9,7 @@ export function NavLink({ href, children }: { href: string; children: ReactNode 
   const ativo = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 
   return (
-    <Link
-      href={href}
-      className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-        ativo ? "bg-amber-700 text-white" : "text-zinc-200 hover:bg-zinc-700"
-      }`}
-    >
+    <Link href={href} className={ativo ? "on" : undefined}>
       {children}
     </Link>
   );

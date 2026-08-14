@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { pagamentos, consulentes, mensagensEnviadas } from "@/db/schema";
+import { pagamentos, membros, mensagensEnviadas } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { enviarMensagemWhatsapp, montarMensagemCobranca, montarMensagemAtraso } from "@/lib/zapi";
+import { enviarLembreteMensalidade, enviarAvisoAtraso } from "@/lib/whatsapp-meta";
 import { formatarMoeda, formatarMesReferencia, mesReferenciaAtual } from "@/lib/format";
 
 const bodySchema = z.object({
@@ -29,18 +29,17 @@ export async function POST(request: NextRequest) {
       status: pagamentos.status,
       valor: pagamentos.valor,
       mesReferencia: pagamentos.mesReferencia,
-      consulenteId: consulentes.id,
-      nome: consulentes.nome,
-      whatsapp: consulentes.whatsapp,
-      diaVencimento: consulentes.diaVencimento,
+      membroId: membros.id,
+      nome: membros.nome,
+      whatsapp: membros.whatsapp,
+      diaVencimento: membros.diaVencimento,
     })
     .from(pagamentos)
-    .innerJoin(consulentes, eq(pagamentos.consulenteId, consulentes.id))
+    .innerJoin(membros, eq(pagamentos.membroId, membros.id))
     .where(
       and(eq(pagamentos.mesReferencia, mes), inArray(pagamentos.status, ["pendente", "atrasado"]))
     );
 
-  const nomeTerreiro = process.env.TERREIRO_NAME || "Terreiro";
   const chavePix = process.env.PIX_KEY || "(chave PIX não configurada)";
 
   let enviadosComSucesso = 0;
@@ -50,28 +49,26 @@ export async function POST(request: NextRequest) {
     const mesFormatado = formatarMesReferencia(linha.mesReferencia);
     const valorFormatado = formatarMoeda(linha.valor).replace("R$", "").trim();
 
-    const mensagem =
+    const resultado =
       linha.status === "atrasado"
-        ? montarMensagemAtraso({
-            nomeTerreiro,
-            nomeConsulente: linha.nome,
+        ? await enviarAvisoAtraso({
+            numero: linha.whatsapp,
+            nomeMembro: linha.nome,
             mesReferenciaFormatado: mesFormatado,
             valor: valorFormatado,
             chavePix,
           })
-        : montarMensagemCobranca({
-            nomeTerreiro,
-            nomeConsulente: linha.nome,
+        : await enviarLembreteMensalidade({
+            numero: linha.whatsapp,
+            nomeMembro: linha.nome,
             mesReferenciaFormatado: mesFormatado,
             valor: valorFormatado,
-            diaVencimento: linha.diaVencimento,
+            diaVencimento: String(linha.diaVencimento),
             chavePix,
           });
 
-    const resultado = await enviarMensagemWhatsapp(linha.whatsapp, mensagem);
-
     await db.insert(mensagensEnviadas).values({
-      consulenteId: linha.consulenteId,
+      membroId: linha.membroId,
       tipo: linha.status === "atrasado" ? "atraso" : "lembrete",
       mesReferencia: linha.mesReferencia,
       statusEnvio: resultado.sucesso ? "sucesso" : "erro",
