@@ -50,3 +50,26 @@ export async function PATCH(
 
   return NextResponse.json(atualizado);
 }
+
+// Exclui o membro definitivamente. Como pagamentos e mensagens_enviadas
+// referenciam membros com "on delete cascade", o histórico de mensalidades
+// e de envios desse membro também é apagado junto — por isso a confirmação
+// no front-end antes de chamar este endpoint.
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const membroId = Number(id);
+  if (!Number.isInteger(membroId)) {
+    return NextResponse.json({ erro: "Id inválido." }, { status: 400 });
+  }
+
+  const [removido] = await db.delete(membros).where(eq(membros.id, membroId)).returning();
+
+  if (!removido) {
+    return NextResponse.json({ erro: "Membro não encontrado." }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

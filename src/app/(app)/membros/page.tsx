@@ -38,6 +38,15 @@ export default function MembrosPage() {
     carregar();
   }
 
+  async function excluir(membro: Membro) {
+    const confirmado = window.confirm(
+      `Excluir "${membro.nome}" definitivamente? Isso também apaga o histórico de mensalidades e mensagens desse membro. Se for só uma pausa, prefira "Inativar".`
+    );
+    if (!confirmado) return;
+    await fetch(`/api/membros/${membro.id}`, { method: "DELETE" });
+    carregar();
+  }
+
   return (
     <div className="space-y-4">
       <div className="head">
@@ -84,6 +93,9 @@ export default function MembrosPage() {
                     </Link>
                     <button className="btn-secondary" onClick={() => alternarAtivo(m)}>
                       {m.ativo ? "Inativar" : "Ativar"}
+                    </button>
+                    <button className="btn-danger" onClick={() => excluir(m)}>
+                      Excluir
                     </button>
                   </td>
                 </tr>
